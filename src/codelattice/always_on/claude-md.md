@@ -1,4 +1,3 @@
-<!-- codelattice:start -->
 ## CodeLattice
 
 This project is indexed by CodeLattice, a local code knowledge graph exposed through the `codelattice` MCP tools.
@@ -8,4 +7,3 @@ Rules:
 - Then `Read` only the file and line range CodeLattice returned, instead of scanning whole files.
 - `advise` and `list_skills` are best-practice guides, not code search; use them only when asked.
 - After modifying code, call `refresh_index` (incremental, fast) to keep the graph current.
-<!-- codelattice:end -->

@@ -4,13 +4,13 @@ const nodes = [
   { label: "tree-sitter", sublabel: "Parsing", color: "accent-purple" },
   { label: "Knowledge Graph", sublabel: "LanceDB + SQLite", color: "accent-cyan" },
   { label: "MCP Server", sublabel: "FastMCP stdio", color: "accent-green" },
-  { label: "Claude CLI", sublabel: "Your IDE", color: "accent-amber" },
+  { label: "Claude Code", sublabel: "Your IDE", color: "accent-amber" },
 ];
 
 const highlights = [
   { title: "No LLM during indexing", description: "Embeddings generated locally by FastEmbed on CPU" },
   { title: "File-based storage", description: "LanceDB (vectors) + SQLite (graph + state)" },
-  { title: "Per-repo isolation", description: "Each repo gets ~/.avicenna/repos/{hash}/" },
+  { title: "Per-repo isolation", description: "Each repo gets ~/.codelattice/repos/{hash}/" },
   { title: "Incremental indexing", description: "SHA-256 content hashes detect only changed files" },
 ];
 
@@ -76,7 +76,7 @@ const colorMap: Record<string, string> = {
     <div class="max-w-2xl mx-auto">
       <h3 class="text-lg font-semibold text-center mb-4">Project Structure</h3>
       <div class="rounded-lg border border-border bg-bg-card p-5">
-        <pre class="font-mono text-sm text-text-secondary leading-relaxed"><code><span class="text-text-primary">src/avicenna/</span>
+        <pre class="font-mono text-sm text-text-secondary leading-relaxed"><code><span class="text-text-primary">src/codelattice/</span>
   <span class="text-accent-blue">config/</span>      <span class="text-text-muted">Pydantic settings from .env</span>
   <span class="text-accent-blue">models/</span>      <span class="text-text-muted">6 DataPoint subclasses</span>
   <span class="text-accent-purple">parser/</span>      <span class="text-text-muted">tree-sitter engine + language queries</span>

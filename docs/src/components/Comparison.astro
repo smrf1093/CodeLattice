@@ -1,0 +1,115 @@
+---
+const rows = [
+  {
+    label: "Goal",
+    ours: "Cut the tokens Claude spends finding code during everyday tasks",
+    theirs: "Turn any folder — code, docs, papers, images, video — into an explorable knowledge graph",
+  },
+  {
+    label: "Inputs",
+    ours: "Python, TypeScript, JavaScript",
+    theirs: "~37 tree-sitter languages plus docs, PDFs, images, video",
+  },
+  {
+    label: "Extraction",
+    ours: "tree-sitter, fully local",
+    theirs: "tree-sitter for code (local); LLM pass for non-code files",
+  },
+  {
+    label: "Retrieval",
+    ours: "Semantic vector search (local embeddings) + graph lookups: callers, callees, imports, base classes",
+    theirs: "Graph traversal: BFS/DFS query, shortest path, explain. No vector store",
+  },
+  {
+    label: "Claude talks to it via",
+    ours: "MCP tools — search_code, find_symbol, get_dependents, …",
+    theirs: "Skill + CLI — graphify query / path / explain (MCP optional)",
+  },
+  {
+    label: "Output",
+    ours: "Compact signatures + line numbers; Claude reads only the lines it needs",
+    theirs: "graphify-out/: graph.html, graph.json, GRAPH_REPORT.md",
+  },
+  {
+    label: "Data location",
+    ours: "~/.codelattice — nothing written into your repo",
+    theirs: "graphify-out/ inside the repo",
+  },
+  {
+    label: "Freshness",
+    ours: "Incremental re-index, stale-file warnings in every response, file watcher",
+    theirs: "graphify update, git hooks, --watch",
+  },
+  {
+    label: "Extras",
+    ours: "Advisor guides, token-savings tracking",
+    theirs: "Communities, god nodes, visualization, Neo4j/GraphML/Obsidian export, PR impact",
+  },
+  {
+    label: "Assistants",
+    ours: "Claude Code",
+    theirs: "Claude Code, Codex, Cursor, Gemini CLI, Copilot and ~15 more",
+  },
+  {
+    label: "Setup",
+    ours: "uv tool install codelattice → codelattice install → /codelattice .",
+    theirs: "uv tool install graphifyy → graphify install → /graphify .",
+  },
+];
+---
+
+<section id="comparison" class="py-20 bg-bg-secondary">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">CodeLattice vs graphify</h2>
+      <p class="text-text-secondary text-lg max-w-2xl mx-auto">
+        Same setup, different jobs.
+        <a href="https://github.com/Graphify-Labs/graphify" class="text-accent-blue hover:underline">graphify</a>
+        maps a whole corpus; CodeLattice finds the exact code Claude needs, cheaply.
+      </p>
+    </div>
+
+    <div class="rounded-xl border border-border overflow-x-auto bg-bg-card">
+      <table class="w-full text-sm text-left min-w-[640px]">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="px-5 py-4 w-1/5"></th>
+            <th class="px-5 py-4 font-semibold text-accent-blue">CodeLattice</th>
+            <th class="px-5 py-4 font-semibold text-text-secondary">graphify</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          {rows.map((row) => (
+            <tr>
+              <td class="px-5 py-3 font-medium text-text-primary align-top">{row.label}</td>
+              <td class="px-5 py-3 text-text-secondary align-top">{row.ours}</td>
+              <td class="px-5 py-3 text-text-secondary align-top">{row.theirs}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+      <div class="bg-bg-card rounded-xl border border-border p-6">
+        <h3 class="font-semibold mb-2 text-accent-blue">Pick CodeLattice when…</h3>
+        <p class="text-text-secondary text-sm leading-relaxed">
+          you want Claude to find a function by meaning ("where do we retry failed payments?") and
+          answer impact questions before a refactor, at low token cost, with no generated files in
+          your repo.
+        </p>
+      </div>
+      <div class="bg-bg-card rounded-xl border border-border p-6">
+        <h3 class="font-semibold mb-2 text-text-primary">Pick graphify when…</h3>
+        <p class="text-text-secondary text-sm leading-relaxed">
+          you want to understand a large or mixed corpus as a whole: architecture overviews,
+          cross-document links, visual exploration, or many languages and assistants.
+        </p>
+      </div>
+    </div>
+
+    <p class="text-center text-text-muted text-sm mt-8">
+      They don't conflict — install both side by side.
+    </p>
+  </div>
+</section>

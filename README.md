@@ -1,49 +1,28 @@
-# Avicenna
+# CodeLattice
 
-Code knowledge graph MCP extension for Claude CLI. Reduces token usage by replacing brute-force file searching with intelligent, graph-aware code retrieval.
+Code knowledge graph for Claude Code. Reduces token usage by replacing brute-force file searching with intelligent, graph-aware code retrieval.
 
 **Fully local and free** — no API keys, no Ollama, no external services. Uses FastEmbed for local CPU-based embeddings and file-based storage (LanceDB + SQLite).
 
-## Quick Start
+## Install
 
-### Option A: Install as Claude Code Plugin (Recommended)
-
-```bash
-# Inside Claude Code, run:
-/plugin install avicenna@claude-plugins-official
-```
-
-That's it — Avicenna tools are immediately available in all your projects.
-
-### Option B: Install from Source
+Requires Python 3.11 or 3.12 and [Claude Code](https://claude.com/claude-code).
 
 ```bash
-# Requires Python 3.11-3.12 and Claude CLI
-git clone https://github.com/smrf1093/Avicenna.git
-cd Avicenna
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
+uv tool install codelattice      # recommended (uv fetches Python 3.12 if needed)
+# or: pipx install codelattice
+# or: pip install codelattice
 
-# Initialize for your project
-python -m avicenna init /path/to/your/project
+codelattice install              # registers the /codelattice skill and MCP server with Claude Code
 ```
 
-This single command:
-- Registers Avicenna as an MCP server with Claude CLI (globally, works in all projects)
-- Indexes your project's codebase into a knowledge graph
-- Creates a `CLAUDE.md` in your project that tells Claude to prefer Avicenna tools
+Restart Claude Code, then inside your project type:
 
-### Verify
-
-```bash
-claude mcp list
-# Should show: ✓ avicenna
+```
+/codelattice .
 ```
 
-### Use
-
-Open Claude Code in your project — Avicenna tools are automatically available:
+That indexes the repo. From then on, ask code questions as usual:
 
 > "Search the codebase for authentication middleware"
 
@@ -51,7 +30,42 @@ Open Claude Code in your project — Avicenna tools are automatically available:
 
 > "What files depend on the database module?"
 
-Claude will use `search_code` and `find_symbol` instead of grep/glob, returning precise results with file paths and line numbers.
+Claude uses `search_code` and `find_symbol` instead of grep/glob, returning precise results with file paths and line numbers.
+
+### What `codelattice install` does
+
+| Writes | Purpose |
+|--------|---------|
+| `~/.claude/skills/codelattice/SKILL.md` | The `/codelattice` skill (index, status, stats, questions) |
+| `~/.claude/CLAUDE.md` | A short registration so Claude knows the skill exists |
+| Claude Code user MCP config | The `codelattice` MCP server (`codelattice serve`) |
+
+Respects `CLAUDE_CONFIG_DIR`. Re-running it is safe; `codelattice uninstall` removes all three.
+
+### Project-scoped install
+
+To commit the setup into a repo so teammates get it on clone:
+
+```bash
+codelattice install --project    # .claude/skills/codelattice/, .claude/CLAUDE.md, .mcp.json
+```
+
+The committed config uses the bare `codelattice` command, so each machine resolves it from its own PATH.
+
+### Always-on mode (optional)
+
+```bash
+codelattice claude install       # run once per project
+```
+
+Writes a CodeLattice section to the project's `CLAUDE.md` and adds a PreToolUse hook to `.claude/settings.json`. Once the repo is indexed, the hook reminds Claude to use CodeLattice tools whenever it reaches for Grep, Glob, or a `grep`/`rg`/`find` shell command. It never blocks a tool call. Undo with `codelattice claude uninstall`.
+
+### Install from source
+
+```bash
+uv tool install git+https://github.com/smrf1093/CodeLattice.git
+codelattice install
+```
 
 ## Use Cases
 
@@ -61,24 +75,50 @@ Claude will use `search_code` and `find_symbol` instead of grep/glob, returning 
 - **Keeping search fresh after edits**: After making edits to several files, call `refresh_index` to update the knowledge graph, then use `search_code` to verify your changes are reflected.
 - **Understanding code dependencies**: Use `get_dependencies` to trace what a module imports and calls, helping you understand unfamiliar code before making changes.
 
+## CodeLattice vs graphify
+
+[graphify](https://github.com/Graphify-Labs/graphify) is the best-known tool in this space, and CodeLattice deliberately copies its setup flow (`uv tool install` → `install` → slash command). The two solve different problems, though:
+
+| | **CodeLattice** | **graphify** |
+|---|---|---|
+| **Goal** | Cut the tokens Claude spends *finding* code during everyday coding tasks | Turn any folder (code, docs, papers, images, video) into a knowledge graph you can explore |
+| **Inputs** | Python, TypeScript, JavaScript source | ~37 tree-sitter languages plus docs, PDFs, images, video |
+| **Code extraction** | tree-sitter, fully local | tree-sitter, fully local |
+| **Non-code extraction** | — | LLM pass (your assistant's model or an API key) |
+| **Retrieval** | Semantic vector search (local FastEmbed embeddings) **plus** graph lookups: callers, callees, imports, base classes | Graph traversal (BFS/DFS, shortest path, explain). No vector store |
+| **How Claude uses it** | MCP tools: `search_code`, `find_symbol`, `get_dependencies`, `get_dependents`, `get_file_summary` | Skill + CLI: `graphify query`, `path`, `explain`. MCP server is an optional extra |
+| **Output** | Compact results (signatures, line numbers, relationships); Claude then reads only the lines it needs | `graphify-out/`: `graph.html`, `graph.json`, `GRAPH_REPORT.md` |
+| **Where data lives** | `~/.codelattice/repos/<id>/` (SQLite + LanceDB). Nothing is written into your repo | `graphify-out/` inside the repo |
+| **Freshness** | Hash-based incremental re-index; every response flags stale files; optional file watcher | `graphify update`, git commit/checkout hooks, `--watch` |
+| **Extras** | Advisor guides (`advise`), built-in token-savings tracking (`codelattice stats`) | Community detection, "god nodes", interactive visualization, Neo4j/GraphML/Obsidian exports, PR impact analysis |
+| **Assistants** | Claude Code | Claude Code, Codex, Cursor, Gemini CLI, Copilot, and ~15 more |
+| **Setup** | `uv tool install codelattice` → `codelattice install` → `/codelattice .` | `uv tool install graphifyy` → `graphify install` → `/graphify .` |
+| **Always-on** | `codelattice claude install` (CLAUDE.md + PreToolUse hook) | `graphify claude install` (CLAUDE.md + PreToolUse hook) |
+
+**Pick CodeLattice** when you mostly want Claude to find the right function by meaning ("where do we retry failed payments?") and to answer impact questions before a refactor, at low token cost, without generated files in your repo.
+
+**Pick graphify** when you want to understand a large or mixed corpus as a whole: architecture overviews, cross-document links, visual exploration, or support for many languages and assistants.
+
+The two don't conflict. Both can be installed side by side, each with its own skill and its own CLAUDE.md section.
+
 ## How It Works
 
-Avicenna pre-indexes your codebase into a knowledge graph using [Cognee](https://github.com/topoteretes/cognee) and [tree-sitter](https://tree-sitter.github.io/), then exposes targeted retrieval tools via MCP. Instead of Claude doing 10-30 file reads and grep calls per task, it queries the graph and gets back signatures, line numbers, and relationships — then fetches only what it needs.
+CodeLattice pre-indexes your codebase into a knowledge graph using [Cognee](https://github.com/topoteretes/cognee) and [tree-sitter](https://tree-sitter.github.io/), then exposes targeted retrieval tools via MCP. Instead of Claude doing 10-30 file reads and grep calls per task, it queries the graph and gets back signatures, line numbers, and relationships — then fetches only what it needs.
 
 ```
 Codebase --> tree-sitter parsing --> per-repo knowledge graph (vectors + graph DB)
                                               |
-Claude CLI <-- MCP stdio <-- Avicenna MCP Server <-- vector search + graph queries
+Claude Code <-- MCP stdio <-- CodeLattice MCP Server <-- vector search + graph queries
 ```
 
-No separate LLM is needed. Avicenna writes directly to SQLite (graph) and LanceDB (vectors) — no LLM is called during indexing. Embeddings are generated locally by FastEmbed. At search time, Claude itself (already running in your CLI) does all the reasoning.
+No separate LLM is needed. CodeLattice writes directly to SQLite (graph) and LanceDB (vectors) — no LLM is called during indexing. Embeddings are generated locally by FastEmbed. At search time, Claude itself (already running in Claude Code) does all the reasoning.
 
 ### Per-Repository Isolation
 
-Each indexed repository gets its own isolated database under `~/.avicenna/repos/{repo_id}/`:
+Each indexed repository gets its own isolated database under `~/.codelattice/repos/{repo_id}/`:
 
 ```
-~/.avicenna/repos/
+~/.codelattice/repos/
 ├── a1b2c3d4e5f67890/     # Project A
 │   ├── graph.db           # SQLite graph database (WAL mode)
 │   └── vectors.lancedb/   # LanceDB vector database
@@ -99,20 +139,6 @@ This means:
 - TypeScript / TSX
 - JavaScript / JSX
 
-## Prerequisites
-
-- **Python 3.11 - 3.12** (recommended 3.12 — FastEmbed requires < 3.13, Cognee requires < 3.14)
-- **Claude CLI** installed
-
-That's it. No Ollama, no API keys, no external services.
-
-### Setup Python with pyenv (if needed)
-
-```bash
-pyenv install 3.12.8
-pyenv local 3.12.8
-```
-
 ## MCP Tools
 
 | Tool | Description |
@@ -127,7 +153,7 @@ pyenv local 3.12.8
 | `advise` | Get best-practice advice — frameworks, patterns, principles |
 | `list_skills` | List all loaded advisor skills with metadata |
 | `index_status` | Check indexing stats and pending changes |
-| `usage_stats` | View token savings report (Avicenna vs traditional) |
+| `usage_stats` | View token savings report (CodeLattice vs traditional) |
 
 ### Token Reduction
 
@@ -136,50 +162,35 @@ Tools return **signatures, names, line numbers, and docstrings** — not full so
 ## CLI Commands
 
 ```bash
-# Initialize Avicenna for a project (recommended)
-python -m avicenna init /path/to/project
+codelattice install [--project]          # set up the skill + MCP server
+codelattice uninstall [--project]        # remove them
+codelattice claude install               # always-on CLAUDE.md section + PreToolUse hook
+codelattice claude uninstall
 
-# Index a project (without MCP registration or CLAUDE.md)
-python -m avicenna index /path/to/project
-
-# Check indexing status
-python -m avicenna status /path/to/project
-
-# View token savings stats
-python -m avicenna stats
-
-# Start the MCP server (used internally by Claude CLI)
-python -m avicenna serve
-```
-
-### Init options
-
-```bash
-# Skip indexing (only register MCP + create CLAUDE.md)
-python -m avicenna init --skip-index /path/to/project
-
-# Skip MCP registration (only index + create CLAUDE.md)
-python -m avicenna init --skip-mcp /path/to/project
+codelattice index /path/to/project       # index (incremental); --full to rebuild
+codelattice status [/path/to/project]    # indexing status
+codelattice stats                        # token savings report
+codelattice serve                        # MCP server (started by Claude Code)
 ```
 
 ## Measuring Token Savings
 
-Avicenna automatically tracks every search tool call and estimates how many tokens a traditional grep/read workflow would have used for the same query.
+CodeLattice automatically tracks every search tool call and estimates how many tokens a traditional grep/read workflow would have used for the same query.
 
 ```bash
-python -m avicenna stats
+codelattice stats
 
-# === Avicenna Token Savings Report ===
+# === CodeLattice Token Savings Report ===
 #
 #   Period:            Last 7 day(s)
 #   Total tool calls:  47
-#   Avicenna tokens:   3,842
+#   CodeLattice tokens:   3,842
 #   Traditional est.:  28,650
 #   Tokens saved:      24,808
 #   Savings:           86.6%
 ```
 
-Or ask Claude: *"Show me the Avicenna token savings stats"*
+Or ask Claude: *"Show me the CodeLattice token savings stats"*
 
 ## Keeping the Knowledge Base Fresh
 
@@ -193,26 +204,26 @@ After making code edits, Claude (or you) can call `refresh_index` to re-index on
 
 ### File Watcher (automatic background)
 
-When a repository is indexed, Avicenna automatically starts a file watcher (if `watchfiles` is installed). It monitors the repository for changes and triggers incremental re-indexing with a 2-second debounce.
+When a repository is indexed, CodeLattice automatically starts a file watcher (if `watchfiles` is installed). It monitors the repository for changes and triggers incremental re-indexing with a 2-second debounce.
 
 ```bash
-pip install -e ".[watch]"
+uv tool install "codelattice[watch]"
 ```
 
 ### How Incremental Indexing Works
 
-Avicenna tracks SHA-256 content hashes per file in SQLite. On re-index:
+CodeLattice tracks SHA-256 content hashes per file in SQLite. On re-index:
 - Only new/changed files are parsed and ingested
 - Deleted files have their entities removed from the graph
 - Unchanged files are skipped entirely
 
 ## Advisor Skills
 
-Avicenna includes an extensible advisor system that provides best-practice guidance on frameworks, design patterns, and engineering principles. Claude can call the `advise` tool during planning or code review to get relevant guidance matched by semantic similarity.
+CodeLattice includes an extensible advisor system that provides best-practice guidance on frameworks, design patterns, and engineering principles. Claude can call the `advise` tool during planning or code review to get relevant guidance matched by semantic similarity.
 
 ### How It Works
 
-Skills are `SKILL.md` files with YAML frontmatter + markdown body. When Claude calls `advise("how should I structure Django views?")`, Avicenna:
+Skills are `SKILL.md` files with YAML frontmatter + markdown body. When Claude calls `advise("how should I structure Django views?")`, CodeLattice:
 
 1. Embeds the query using FastEmbed (same engine as code search)
 2. Computes cosine similarity against all loaded skill descriptions
@@ -261,15 +272,15 @@ Skills are discovered from three locations (in priority order):
 
 | Location | Source | Priority Boost |
 |----------|--------|---------------|
-| `{repo}/.avicenna/skills/` | Project-specific (team overrides) | +20 |
-| `~/.avicenna/skills/` | User-installed (personal) | +10 |
-| `src/avicenna/advisor/skills/` | Built-in (ships with Avicenna) | +0 |
+| `{repo}/.codelattice/skills/` | Project-specific (team overrides) | +20 |
+| `~/.codelattice/skills/` | User-installed (personal) | +10 |
+| `src/codelattice/advisor/skills/` | Built-in (ships with CodeLattice) | +0 |
 
 To add a custom skill:
 
 ```bash
-mkdir -p ~/.avicenna/skills/my-framework
-# Create ~/.avicenna/skills/my-framework/SKILL.md with the format above
+mkdir -p ~/.codelattice/skills/my-framework
+# Create ~/.codelattice/skills/my-framework/SKILL.md with the format above
 ```
 
 The skill name in frontmatter must match the directory name.
@@ -299,9 +310,9 @@ cp .env.template .env  # optional — only if you want to customize
 | `VECTOR_DB_PROVIDER` | `lancedb` | Vector store (file-based) |
 | `GRAPH_DATABASE_PROVIDER` | `sqlite` | Graph DB (file-based, WAL mode) |
 | `DB_PROVIDER` | `sqlite` | Relational DB (file-based) |
-| `AVICENNA_DATA_DIR` | `~/.avicenna` | Where indexes are stored |
-| `AVICENNA_MAX_FILE_SIZE_KB` | `500` | Skip files larger than this |
-| `AVICENNA_BATCH_SIZE` | `200` | DataPoints per ingestion batch |
+| `CODELATTICE_DATA_DIR` | `~/.codelattice` | Where indexes are stored |
+| `CODELATTICE_MAX_FILE_SIZE_KB` | `500` | Skip files larger than this |
+| `CODELATTICE_BATCH_SIZE` | `200` | DataPoints per ingestion batch |
 
 ### Optional: Higher Quality Embeddings with Ollama
 
@@ -322,25 +333,14 @@ EMBEDDING_DIMENSIONS=1536
 EMBEDDING_API_KEY=sk-your-key-here
 ```
 
-## Manual Setup (alternative to `init`)
-
-If you prefer to set things up manually instead of using `python -m avicenna init`:
-
-```bash
-# Register with Claude CLI
-claude mcp add avicenna -- /path/to/avicenna/.venv/bin/python -m avicenna serve
-
-# Index your project
-python -m avicenna index /path/to/your/project
-
-# Create CLAUDE.md in your project (so Claude knows to use Avicenna)
-# See the init command's output for the recommended CLAUDE.md content
-```
-
 ## Architecture
 
 ```
-src/avicenna/
+src/codelattice/
+├── cli.py                      # `codelattice` command
+├── install.py                  # install / uninstall / claude install / hook-guard
+├── skill/SKILL.md              # The /codelattice skill copied by `install`
+├── always_on/claude-md.md      # CLAUDE.md section written by `claude install`
 ├── config/settings.py          # Pydantic settings from .env
 ├── models/code_entities.py     # 6 DataPoint subclasses (CodeFile, CodeFunction, etc.)
 ├── parser/
@@ -368,20 +368,22 @@ src/avicenna/
 ## Development
 
 ```bash
-pip install -e ".[dev]"
-ruff check src/
-pytest
+git clone https://github.com/smrf1093/CodeLattice.git && cd CodeLattice
+python3.12 -m venv .venv && .venv/bin/pip install -e ".[dev]"
+.venv/bin/codelattice install    # points Claude Code at your working copy
+.venv/bin/ruff check src/
+.venv/bin/pytest
 ```
 
 ## Built With
 
-Avicenna stands on the shoulders of these excellent open-source projects:
+CodeLattice stands on the shoulders of these excellent open-source projects:
 
 | Library | Role |
 |---------|------|
 | [Cognee](https://github.com/topoteretes/cognee) | Knowledge graph framework — data point modeling, vector infrastructure |
 | [tree-sitter](https://github.com/tree-sitter/tree-sitter) | Incremental parsing for accurate code extraction across languages |
-| [FastMCP](https://github.com/jlowin/fastmcp) | Model Context Protocol server framework for Claude CLI integration |
+| [FastMCP](https://github.com/jlowin/fastmcp) | Model Context Protocol server framework for Claude Code integration |
 | [FastEmbed](https://github.com/qdrant/fastembed) | Local CPU-based text embeddings — no API keys, no GPU required |
 | [LanceDB](https://github.com/lancedb/lancedb) | Embedded vector database — file-based, zero-config |
 | [Pydantic](https://github.com/pydantic/pydantic) | Settings management and data validation |

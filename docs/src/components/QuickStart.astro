@@ -1,10 +1,10 @@
 ---
-function formatCode(code: string): string {
+function formatCode(code: string, prompt = "$"): string {
   return code
     .split("\n")
     .map((line) =>
       line
-        ? `<span class="text-accent-cyan">$</span> <span class="text-text-primary">${line}</span>`
+        ? `<span class="text-accent-cyan">${prompt}</span> <span class="text-text-primary">${line}</span>`
         : ""
     )
     .join("\n");
@@ -13,25 +13,22 @@ function formatCode(code: string): string {
 const steps = [
   {
     number: "1",
-    title: "Install as Plugin (Recommended)",
-    code: `/plugin install avicenna@claude-plugins-official`,
-    note: "Run this inside Claude Code. That's it — Avicenna tools are immediately available in all your projects.",
+    title: "Install the CLI",
+    code: `uv tool install codelattice`,
+    note: "Or pipx install codelattice. uv fetches Python 3.12 for you if needed.",
   },
   {
     number: "2",
-    title: "Or Install from Source",
-    code: `git clone https://github.com/smrf1093/Avicenna.git
-cd Avicenna
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
-python -m avicenna init /path/to/your/project`,
-    note: "Registers the MCP server, indexes your codebase, and creates a CLAUDE.md — all in one command.",
+    title: "Register with Claude Code",
+    code: `codelattice install`,
+    note: "Adds the /codelattice skill and the MCP server for every project. Use --project to write them into the current repo instead.",
   },
   {
     number: "3",
-    title: "Use",
-    code: `cd /path/to/your/project && claude`,
-    note: "Avicenna tools are now available. Try asking Claude to search your code or analyze dependencies.",
+    title: "Index your project",
+    code: `/codelattice .`,
+    prompt: "&gt;",
+    note: "Type this inside Claude Code (restart it once after step 2). Then ask questions as usual; Claude uses search_code and find_symbol instead of grep.",
   },
 ];
 ---
@@ -41,7 +38,7 @@ python -m avicenna init /path/to/your/project`,
     <div class="text-center mb-14">
       <h2 class="text-3xl md:text-4xl font-bold mb-4">Get Started in 60 Seconds</h2>
       <p class="text-text-secondary text-lg max-w-2xl mx-auto">
-        Zero config. No API keys. Just install, init, and go.
+        Zero config. No API keys. Same three steps as graphify.
       </p>
     </div>
 
@@ -65,7 +62,7 @@ python -m avicenna init /path/to/your/project`,
                   <div class="w-2 h-2 rounded-full bg-green-500/60"></div>
                 </div>
               </div>
-              <pre class="p-4 bg-bg-secondary/50 text-sm leading-relaxed overflow-x-auto"><code set:html={formatCode(step.code)} /></pre>
+              <pre class="p-4 bg-bg-secondary/50 text-sm leading-relaxed overflow-x-auto"><code set:html={formatCode(step.code, step.prompt)} /></pre>
             </div>
 
             {step.note && (

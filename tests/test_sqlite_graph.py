@@ -6,7 +6,7 @@ import sqlite3
 
 import pytest
 
-from avicenna.graph.sqlite_graph import SqliteGraphAdapter
+from codelattice.graph.sqlite_graph import SqliteGraphAdapter
 
 
 class FakeDataPoint:
