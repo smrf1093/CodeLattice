@@ -375,6 +375,10 @@ python3.12 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest
 ```
 
+### Releasing
+
+Bump `version` in `pyproject.toml` and `src/codelattice/__init__.py`, push, then create a GitHub release tagged `v<version>`. The `Publish to PyPI` workflow tests, builds and uploads it via PyPI trusted publishing.
+
 ## Built With
 
 CodeLattice stands on the shoulders of these excellent open-source projects:
